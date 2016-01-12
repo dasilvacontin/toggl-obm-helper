@@ -278,7 +278,6 @@ var TogglOBMHelper = function () {
             url: (0, _utils.getAPIUrl)('me/experiments/web', 9),
             success: function success(data) {
               _this.mock(data);
-              console.log(data);
               resolve(_this);
             },
             error: function error(err) {
