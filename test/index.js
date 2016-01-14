@@ -1,5 +1,6 @@
 import test from 'tape'
 import sinon from 'sinon'
+import Promise from 'bluebird'
 import OBM from '../lib'
 
 const nr = 6
@@ -10,9 +11,8 @@ const $ = global.$ = { ajax: noop }
 
 test('mock', function (t) {
   const obm = new OBM(nr, userId)
-  obm.mock({ nr, included: true, actions: 'manager,blue' })
+  obm.mock({ included: true, actions: 'manager,blue' })
 
-  t.ok(obm.isRunning(), 'isRunning check')
   t.ok(obm.isIncluded(), 'isIncluded check')
   t.notOk(obm.isExcluded(), 'isExcluded check')
   t.ok(obm.getActionExists('manager'), 'getActionExists check')
@@ -21,31 +21,13 @@ test('mock', function (t) {
   t.end()
 })
 
-test('isRunning', function (t) {
-  const obm = new OBM(nr, userId)
-
-  obm.mock({ nr })
-  t.ok(obm.isRunning())
-
-  obm.mock({ nr: 5 })
-  t.notOk(obm.isRunning())
-
-  t.end()
-})
-
 test('isIncluded', function (t) {
   const obm = new OBM(nr, userId)
 
-  obm.mock({ nr, included: true })
+  obm.mock({ included: true })
   t.ok(obm.isIncluded())
 
-  obm.mock({ nr, included: false })
-  t.notOk(obm.isIncluded())
-
-  obm.mock({ nr: 5, included: true })
-  t.notOk(obm.isIncluded())
-
-  obm.mock({ nr: 5, included: false })
+  obm.mock({ included: false })
   t.notOk(obm.isIncluded())
 
   t.end()
@@ -54,16 +36,10 @@ test('isIncluded', function (t) {
 test('isExcluded', function (t) {
   const obm = new OBM(nr, userId)
 
-  obm.mock({ nr, included: true })
-  t.notOk(obm.isExcluded())
-
-  obm.mock({ nr, included: false })
+  obm.mock({ included: false })
   t.ok(obm.isExcluded())
 
-  obm.mock({ nr: 5, included: true })
-  t.notOk(obm.isExcluded())
-
-  obm.mock({ nr: 5, included: false })
+  obm.mock({ included: true })
   t.notOk(obm.isExcluded())
 
   t.end()
@@ -136,10 +112,10 @@ test('getData/saveData/getBool/saveBool/dataExists', function (t) {
 test('getGroupString', function (t) {
   const obm = new OBM(6, userId)
 
-  obm.mock({nr: 6, included: true})
+  obm.mock({ included: true })
   t.equal(obm.getGroupString(), 'included')
 
-  obm.mock({included: false})
+  obm.mock({ included: false })
   t.equal(obm.getGroupString(), 'excluded')
 
   t.end()
@@ -148,13 +124,47 @@ test('getGroupString', function (t) {
 test('sendAction', function (t) {
   sinon.stub($, 'ajax')
   const obm = new OBM(nr, userId)
+
+  obm.mock({ included: true, actions: '' })
   obm.sendAction('seen', 3)
-  t.equal($.ajax.callCount, 1)
-  const callArgs = $.ajax.firstCall.args[0]
-  t.equal(callArgs.data,
-    '{"experiment_id":6,"key":"seen","value":"3"}')
-  t.equal(callArgs.url,
-    '/api/v9/obm/actions')
+  t.equal($.ajax.callCount, 1, 'should perform ajax call')
+  let callArgs = $.ajax.firstCall.args[0]
+  t.equal(
+    callArgs.data,
+    '{"experiment_id":6,"key":"seen","value":"3"}',
+    'with correct payload'
+  )
+  t.equal(
+    callArgs.url,
+    '/api/v9/obm/actions',
+    'and to the right endpoint'
+  )
+  t.ok(obm.getActionExists('seen'), 'action should be saved locally')
+
   $.ajax.restore()
   t.end()
+})
+
+test('fetch', function (t) {
+  t.plan(6)
+
+  $.ajax = opts => setTimeout(() => {
+    opts.success({ nr: 43, included: true, actions: 'manager-included' })
+  }, 20)
+
+  const obm = new OBM(42, userId)
+  t.notOk(obm.obmData.fetched, 'initially data is not fetched')
+  const p = obm.fetch()
+  t.ok(p instanceof Promise, 'it should return a promise')
+  t.ok(obm.obmData.fetchRequest, 'the request promise should be stored')
+
+  p.then(() => {
+    t.ok(obm.obmData.fetched,
+      'when getting server response should mark its data as fetched')
+    t.equal(obm.obmData.fetchRequest, null,
+      'it should clear the current request')
+    t.notOk(obm.isIncluded() && obm.getActionExists('manager-included'),
+      'it shouldnt update its data if incoming data isnt for the same exp')
+  })
+
 })
