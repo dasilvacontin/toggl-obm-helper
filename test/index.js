@@ -11,13 +11,12 @@ const $ = global.$ = { ajax: noop }
 
 test('mock', function (t) {
   const obm = new OBM(nr, userId)
-  obm.mock({ included: true, actions: 'manager,blue' })
+  const included = true
+  const actions = 'manager,blue'
+  obm.mock({ included, actions })
 
-  t.ok(obm.isIncluded(), 'isIncluded check')
-  t.notOk(obm.isExcluded(), 'isExcluded check')
-  t.ok(obm.getActionExists('manager'), 'getActionExists check')
-  t.ok(obm.getActionExists('blue'), 'getActionExists check')
-  t.notOk(obm.getActionExists('programmer'), 'getActionExists check')
+  t.equal(obm.obmData.included, included, 'data prop check')
+  t.equal(obm.obmData.actions, actions, 'data prop check')
   t.end()
 })
 
@@ -25,10 +24,10 @@ test('isIncluded', function (t) {
   const obm = new OBM(nr, userId)
 
   obm.mock({ included: true })
-  t.ok(obm.isIncluded())
+  t.ok(obm.isIncluded(), 'should return true if included')
 
   obm.mock({ included: false })
-  t.notOk(obm.isIncluded())
+  t.notOk(obm.isIncluded(), 'should return false if excluded')
 
   t.end()
 })
@@ -36,11 +35,11 @@ test('isIncluded', function (t) {
 test('isExcluded', function (t) {
   const obm = new OBM(nr, userId)
 
-  obm.mock({ included: false })
-  t.ok(obm.isExcluded())
-
   obm.mock({ included: true })
-  t.notOk(obm.isExcluded())
+  t.notOk(obm.isExcluded(), 'should return false if included')
+
+  obm.mock({ included: false })
+  t.ok(obm.isExcluded(), 'should return true if excluded')
 
   t.end()
 })
@@ -49,16 +48,30 @@ test('getActionExists', function (t) {
   const obm = new OBM(nr, userId)
 
   obm.mock({ actions: '' })
-  t.notOk(obm.getActionExists('blue'))
+  t.notOk(
+    obm.getActionExists('blue'),
+    'should return false if doesnt exist'
+  )
 
   obm.mock({ actions: 'blue' })
-  t.ok(obm.getActionExists('blue'))
+  t.ok(
+    obm.getActionExists('blue'),
+    'should return true if exists'
+  )
 
   obm.mock({ actions: 'blue,red' })
-  t.ok(obm.getActionExists('blue'))
-
-  obm.mock({ actions: 'blue,red' })
-  t.ok(obm.getActionExists('red'))
+  t.ok(
+    obm.getActionExists('blue'),
+    'should return true if exists and mult actions'
+  )
+  t.ok(
+    obm.getActionExists('red'),
+    'should return true if exists and mult actions'
+  )
+  t.notOk(
+    obm.getActionExists('green'),
+    'should return false if doesnt exist and mult actions'
+  )
 
   t.end()
 })
@@ -67,7 +80,8 @@ test('getStorageKey', function (t) {
   let obm = new OBM(nr, userId)
   t.equal(
     obm.getStorageKey('shown'),
-    `obm${ nr }_shown_${ userId }`
+    `obm${ nr }_shown_${ userId }`,
+    'should return nr and userId dependent key'
   )
   t.end()
 })
@@ -83,28 +97,67 @@ const cookieMock = function () {
   }
 }
 
-test('getData/saveData/getBool/saveBool/dataExists', function (t) {
+test('getData/saveData', function (t) {
   $.cookie = cookieMock()
   let obm = new OBM(6, userId)
   const key = 'shown'
 
-  t.equal(obm.getData(key), undefined)
-  t.notOk(obm.getBool(key))
-  t.notOk(obm.dataExists(key))
+  t.equal(obm.getData(key), undefined,
+    'should return `undefined` when nothing stored')
 
   obm.saveData(key, true)
-  t.equal(obm.getData(key), 'true')
-  t.notOk(obm.getBool(key))
-  t.ok(obm.dataExists(key))
+  t.equal(obm.getData(key), 'true',
+    'it should return the stored string')
 
-  obm = new OBM(7, userId)
-  t.equal(obm.getData(key, undefined))
-  t.notOk(obm.dataExists(key))
-  t.notOk(obm.getBool(key))
+  t.end()
+})
+
+test('getBool/saveBool', function (t) {
+  $.cookie = cookieMock()
+  let obm = new OBM(6, userId)
+  const key = 'shown'
+
+  t.equal(obm.getBool(key), false,
+    'should return `false` when nothing stored')
+
+  obm.saveData(key, true)
+  t.equal(obm.getBool(key), true,
+    'should return `true` when `true` was stored')
+
+  obm.saveData(key, false)
+  t.equal(obm.getBool(key), false,
+    'should return `false` when `false` was stored')
+
+  obm.saveData(key, 1)
+  t.equal(obm.getBool(key), true,
+    'should return `true` when `1` was stored')
+
+  obm.saveData(key, 0)
+  t.equal(obm.getBool(key), false,
+    'should return `false` when `0` was stored')
 
   obm.saveBool(key, true)
-  t.ok(obm.getBool(key))
-  t.ok(obm.dataExists(key))
+  t.equal(obm.getBool(key), true,
+    'should return `true` when used saveBool with `true`')
+
+  obm.saveBool(key, false)
+  t.equal(obm.getBool(key), false,
+    'should return `false` when used saveBool with `false`')
+
+  t.end()
+})
+
+test('dataExists', function (t) {
+  $.cookie = cookieMock()
+  let obm = new OBM(6, userId)
+  const key = 'shown'
+
+  t.equal(obm.dataExists(key), false,
+    'should return `false` when nothing stored')
+
+  obm.saveData(key, false)
+  t.equal(obm.dataExists(key), true,
+    'should return `false` when something stored')
 
   t.end()
 })
@@ -113,10 +166,12 @@ test('getGroupString', function (t) {
   const obm = new OBM(6, userId)
 
   obm.mock({ included: true })
-  t.equal(obm.getGroupString(), 'included')
+  t.equal(obm.getGroupString(), 'included',
+    'should return "included" if included')
 
   obm.mock({ included: false })
-  t.equal(obm.getGroupString(), 'excluded')
+  t.equal(obm.getGroupString(), 'excluded',
+    'should return "excluded" if excluded')
 
   t.end()
 })
