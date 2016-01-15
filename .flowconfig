@@ -1,5 +1,7 @@
 [ignore]
-.*\.json
+.*/node_modules/
+.*/misc/
+.*/dist/
 
 [include]
 
