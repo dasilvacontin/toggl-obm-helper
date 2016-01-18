@@ -1,6 +1,6 @@
 {
   "name": "toggl-obm-helper",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Helper module for OBM experiments.",
   "author": "David da Silva <dasilvacontin@gmail.com>",
   "license": "MIT",

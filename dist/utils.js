@@ -29,10 +29,13 @@ function getAPIToken() {
 
   if (_apiToken != null) return _ref(_apiToken);
   var rawData = sessionStorage.getItem('/api/v8/me');
+  if (rawData == null) return _ref(null);
   try {
     var userData = JSON.parse(rawData);
     _apiToken = userData.api_token;
-  } catch (e) {}
+  } catch (e) {
+    _apiToken = null;
+  }
   return _ref(_apiToken);
 }
 
@@ -56,6 +59,14 @@ function setAuthHeader(xhr) {
 function getAPIUrl(path) {
   var v = arguments.length <= 1 || arguments[1] === undefined ? 8 : arguments[1];
 
+  function _ref3(_id3) {
+    if (!(typeof _id3 === 'string')) {
+      throw new TypeError('Function "getAPIUrl" return value violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(_id3));
+    }
+
+    return _id3;
+  }
+
   if (!(typeof path === 'string')) {
     throw new TypeError('Value of argument "path" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(path));
   }
@@ -64,7 +75,7 @@ function getAPIUrl(path) {
     throw new TypeError('Value of argument "v" violates contract.\n\nExpected:\nnumber\n\nGot:\n' + _inspect(v));
   }
 
-  return (0, _underscore.rtrim)('/api/v' + v + '/' + path, '/');
+  return _ref3((0, _underscore.rtrim)('/api/v' + v + '/' + path, '/'));
 }
 
 function _inspect(input) {

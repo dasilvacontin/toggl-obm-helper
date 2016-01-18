@@ -30,6 +30,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var obmCache = {};
+var fetchRequest = null;
+
+if (!(fetchRequest == null || fetchRequest instanceof _bluebird2.default)) {
+  throw new TypeError('Value of variable "fetchRequest" violates contract.\n\nExpected:\n?Promise\n\nGot:\n' + _inspect(fetchRequest));
+}
 
 var OBMData = function () {
   function OBMData() {
@@ -43,18 +48,13 @@ var OBMData = function () {
     }
 
     this.fetched = false;
-    this.fetchRequest = null;
-
-    if (!(this.fetchRequest == null || this.fetchRequest instanceof _bluebird2.default)) {
-      throw new TypeError('Value of "this.fetchRequest" violates contract.\n\nExpected:\n?Promise\n\nGot:\n' + _inspect(this.fetchRequest));
-    }
   }
 
   _createClass(OBMData, [{
     key: 'update',
-    value: function update(_ref2) {
-      var included = _ref2.included;
-      var actions = _ref2.actions;
+    value: function update(_ref14) {
+      var included = _ref14.included;
+      var actions = _ref14.actions;
 
       if (included != null) this.included = included;
 
@@ -69,11 +69,6 @@ var OBMData = function () {
       }
 
       this.fetched = true;
-      this.fetchRequest = null;
-
-      if (!(this.fetchRequest == null || this.fetchRequest instanceof _bluebird2.default)) {
-        throw new TypeError('Value of "this.fetchRequest" violates contract.\n\nExpected:\n?Promise\n\nGot:\n' + _inspect(this.fetchRequest));
-      }
     }
   }], [{
     key: 'getInstanceFor',
@@ -101,7 +96,7 @@ var OBMData = function () {
       }
       var obmData = userData[nr];
       if (!obmData) {
-        obmData = new OBMData(nr);
+        obmData = new OBMData();
         userData[nr] = obmData;
       }
       return _ref(obmData);
@@ -148,11 +143,11 @@ var TogglOBMHelper = function () {
 
   _createClass(TogglOBMHelper, [{
     key: 'mock',
-    value: function mock(_ref3) {
-      var included = _ref3.included;
-      var actions = _ref3.actions;
+    value: function mock(_ref15) {
+      var included = _ref15.included;
+      var actions = _ref15.actions;
 
-      var mockData = new OBMData(this.obmData.nr);
+      var mockData = new OBMData();
       mockData.update({ included: included, actions: actions });
       for (var prop in arguments[0]) {
         if (!mockData.hasOwnProperty(prop)) {
@@ -177,8 +172,19 @@ var TogglOBMHelper = function () {
   }, {
     key: 'isIncluded',
     value: function isIncluded() {
+      function _ref2(_id2) {
+        if (!(typeof _id2 === 'boolean')) {
+          throw new TypeError('Function return value violates contract.\n\nExpected:\nbool\n\nGot:\n' + _inspect(_id2));
+        }
+
+        return _id2;
+      }
+
       this.checkIsFetched();
-      return this.obmData.included;
+      var included = this.obmData.included;
+      var wasIncluded = this.getBool('was_included');
+      if (included && !wasIncluded) this.saveBool('was_included', true);
+      return _ref2(included || wasIncluded);
     }
 
     /**
@@ -190,7 +196,7 @@ var TogglOBMHelper = function () {
     key: 'isExcluded',
     value: function isExcluded() {
       this.checkIsFetched();
-      return !this.obmData.included;
+      return !this.isIncluded();
     }
 
     /**
@@ -203,6 +209,10 @@ var TogglOBMHelper = function () {
   }, {
     key: 'getActionExists',
     value: function getActionExists(action) {
+      if (!(typeof action === 'string')) {
+        throw new TypeError('Value of argument "action" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(action));
+      }
+
       this.checkIsFetched();
       var actions = this.obmData.actions.split(',');
       var exists = _lodash2.default.indexOf(actions, action) > -1;
@@ -219,6 +229,10 @@ var TogglOBMHelper = function () {
   }, {
     key: 'getStorageKey',
     value: function getStorageKey(key) {
+      if (!(typeof key === 'string')) {
+        throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
+      }
+
       return 'obm' + this.nr + '_' + key + '_' + this.userId;
     }
 
@@ -229,12 +243,28 @@ var TogglOBMHelper = function () {
   }, {
     key: 'getData',
     value: function getData(key) {
+      function _ref6(_id6) {
+        if (!(_id6 == null || typeof _id6 === 'string')) {
+          throw new TypeError('Function return value violates contract.\n\nExpected:\n?string\n\nGot:\n' + _inspect(_id6));
+        }
+
+        return _id6;
+      }
+
+      if (!(typeof key === 'string')) {
+        throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
+      }
+
       var storageKey = this.getStorageKey(key);
-      return $.cookie(storageKey);
+      return _ref6($.cookie(storageKey));
     }
   }, {
     key: 'saveData',
     value: function saveData(key, value) {
+      if (!(typeof key === 'string')) {
+        throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
+      }
+
       var storageKey = this.getStorageKey(key);
       $.cookie(storageKey, value, { path: '/', expires: 30 });
     }
@@ -246,17 +276,41 @@ var TogglOBMHelper = function () {
   }, {
     key: 'dataExists',
     value: function dataExists(key) {
-      return this.getData(key) != null;
+      function _ref8(_id8) {
+        if (!(typeof _id8 === 'boolean')) {
+          throw new TypeError('Function return value violates contract.\n\nExpected:\nbool\n\nGot:\n' + _inspect(_id8));
+        }
+
+        return _id8;
+      }
+
+      if (!(typeof key === 'string')) {
+        throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
+      }
+
+      return _ref8(this.getData(key) != null);
     }
   }, {
     key: 'getBool',
     value: function getBool(key) {
+      if (!(typeof key === 'string')) {
+        throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
+      }
+
       var value = this.getData(key);
       return value === '1' || value === 'true';
     }
   }, {
     key: 'saveBool',
     value: function saveBool(key, bool) {
+      if (!(typeof key === 'string')) {
+        throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
+      }
+
+      if (!(typeof bool === 'boolean')) {
+        throw new TypeError('Value of argument "bool" violates contract.\n\nExpected:\nbool\n\nGot:\n' + _inspect(bool));
+      }
+
       this.saveData(key, bool && '1' || '0');
     }
 
@@ -300,6 +354,7 @@ var TogglOBMHelper = function () {
         throw new TypeError('Value of argument "key" violates contract.\n\nExpected:\nstring\n\nGot:\n' + _inspect(key));
       }
 
+      if (this.getActionExists(key)) return;
       value = String(value);
       var payload = { experiment_id: this.nr, key: key, value: value };
       $.ajax({
@@ -325,42 +380,63 @@ var TogglOBMHelper = function () {
     value: function fetch() {
       var _this = this;
 
-      var fetchRequest = this.obmData.fetchRequest;
-      if (fetchRequest == null) {
-        fetchRequest = new _bluebird2.default(function (resolve, reject) {
-          $.ajax({
-            beforeSend: _utils.setAuthHeader,
-            type: 'GET',
-            url: (0, _utils.getAPIUrl)('me/experiments/web', 9),
-            success: function success(_ref4) {
-              var nr = _ref4.nr;
-              var included = _ref4.included;
-              var actions = _ref4.actions;
+      var _ref16 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-              if (nr === _this.nr) {
-                _this.obmData.update({ included: included, actions: actions });
-              } else {
-                _this.obmData.fetched = true;
-                _this.obmData.fetchRequest = null;
-              }
-              resolve(_this);
-            },
-            error: function error(err) {
-              // In case data has been mocked or refetched, ignore failure
-              if (_this.obmData.fetchRequest === fetchRequest) {
-                _this.obmData.fetchRequest = null;
+      var _ref16$force = _ref16.force;
+      var force = _ref16$force === undefined ? true : _ref16$force;
+
+      if (fetchRequest == null || force) {
+        (function () {
+          var req = new _bluebird2.default(function (resolve, reject) {
+            $.ajax({
+              beforeSend: _utils.setAuthHeader,
+              type: 'GET',
+              url: (0, _utils.getAPIUrl)('me/experiments/web', 9),
+              success: function success(data) {
+                if (req === fetchRequest) {
+                  fetchRequest = null;
+
+                  if (!(fetchRequest == null || fetchRequest instanceof _bluebird2.default)) {
+                    throw new TypeError('Value of variable "fetchRequest" violates contract.\n\nExpected:\n?Promise\n\nGot:\n' + _inspect(fetchRequest));
+                  }
+                }
+                resolve(data);
+              },
+              error: function error(err) {
+                if (req === fetchRequest) {
+                  fetchRequest = null;
+
+                  if (!(fetchRequest == null || fetchRequest instanceof _bluebird2.default)) {
+                    throw new TypeError('Value of variable "fetchRequest" violates contract.\n\nExpected:\n?Promise\n\nGot:\n' + _inspect(fetchRequest));
+                  }
+                }
                 reject(err);
               }
-            }
+            });
           });
-        });
-        this.obmData.fetchRequest = fetchRequest;
-
-        if (!(this.obmData.fetchRequest == null || this.obmData.fetchRequest instanceof _bluebird2.default)) {
-          throw new TypeError('Value of "this.obmData.fetchRequest" violates contract.\n\nExpected:\n?Promise\n\nGot:\n' + _inspect(this.obmData.fetchRequest));
-        }
+          fetchRequest = req;
+        })();
       }
-      return fetchRequest;
+      return new _bluebird2.default(function (resolve, reject) {
+        fetchRequest.then(function (data) {
+          var nr = data.nr;
+          var included = data.included;
+          var actions = data.actions;
+
+          if (nr === _this.nr) {
+            _this.obmData.update({ included: included, actions: actions });
+          }
+          _this.obmData.fetched = true;
+          resolve(_this);
+          return data;
+        }, function (err) {
+          console.log(err);
+          _this.obmData.fetched = true;
+          resolve(_this);
+          // execute following .then handlers
+          return { nr: -1, included: false, actions: '' };
+        });
+      });
     }
 
     /**
@@ -372,10 +448,18 @@ var TogglOBMHelper = function () {
   }, {
     key: 'ready',
     value: function ready() {
-      if (this.obmData.fetched) {
-        return _bluebird2.default.resolve(this);
+      function _ref13(_id13) {
+        if (!(_id13 instanceof _bluebird2.default)) {
+          throw new TypeError('Function return value violates contract.\n\nExpected:\nPromise\n\nGot:\n' + _inspect(_id13));
+        }
+
+        return _id13;
       }
-      return this.fetch();
+
+      if (this.obmData.fetched) {
+        return _ref13(_bluebird2.default.resolve(this));
+      }
+      return _ref13(this.fetch({ force: false }));
     }
   }]);
 
