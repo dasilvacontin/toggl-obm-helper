@@ -6,9 +6,13 @@ import OBM from '../lib'
 const nr = 6
 const userId = 11
 
-const $ = global.$ = { ajax: opts => {
-  setTimeout(() => opts.success({ nr: 0, included: false, actions: '' }), 20)
-}}
+const noop = () => undefined
+const $ = global.$ = {
+  ajax: opts => {
+    setTimeout(() => opts.success({ nr: 0, included: false, actions: '' }), 20)
+  },
+  cookie: noop
+}
 
 test('mock', function (t) {
   const obm = new OBM(nr, userId)
@@ -110,6 +114,7 @@ test('getData/saveData', function (t) {
   t.equal(obm.getData(key), 'true',
     'it should return the stored string')
 
+  $.cookie = noop
   t.end()
 })
 
@@ -145,6 +150,7 @@ test('getBool/saveBool', function (t) {
   t.equal(obm.getBool(key), false,
     'should return `false` when used saveBool with `false`')
 
+  $.cookie = noop
   t.end()
 })
 
@@ -160,6 +166,7 @@ test('dataExists', function (t) {
   t.equal(obm.dataExists(key), true,
     'should return `false` when something stored')
 
+  $.cookie = noop
   t.end()
 })
 
