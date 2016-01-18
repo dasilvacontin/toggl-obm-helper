@@ -6,8 +6,9 @@ import OBM from '../lib'
 const nr = 6
 const userId = 11
 
-const noop = function () {}
-const $ = global.$ = { ajax: noop }
+const $ = global.$ = { ajax: opts => {
+  setTimeout(() => opts.success({ nr: 0, included: false, actions: '' }), 20)
+}}
 
 test('mock', function (t) {
   const obm = new OBM(nr, userId)
@@ -201,25 +202,38 @@ test('sendAction', function (t) {
 })
 
 test('fetch', function (t) {
-  t.plan(6)
+  t.plan(9)
 
-  $.ajax = opts => setTimeout(() => {
-    opts.success({ nr: 43, included: true, actions: 'manager-included' })
-  }, 20)
+  let res = { nr: 43, included: true, actions: 'manager-included' }
+  let ajaxCalledCount = 0
+  $.ajax = opts => {
+    ++ajaxCalledCount
+    setTimeout(() => {
+      opts.success(res)
+    }, 20)
+  }
 
-  const obm = new OBM(42, userId)
-  t.notOk(obm.obmData.fetched, 'initially data is not fetched')
-  const p = obm.fetch()
-  t.ok(p instanceof Promise, 'it should return a promise')
-  t.ok(obm.obmData.fetchRequest, 'the request promise should be stored')
-
-  p.then(() => {
+  Promise.resolve().then(() => {
+    const obm = new OBM(44, userId)
+    t.notOk(obm.obmData.fetched, 'initially data is not fetched')
+    t.equal(ajaxCalledCount, 1, 'helper constructor triggers initial fetch')
+    obm.fetch()
+    t.equal(ajaxCalledCount, 2, 'it should trigger a re-fetch by default')
+    const p = obm.fetch({ force: false })
+    t.equal(ajaxCalledCount, 2,
+      'during an on-going request, non-forced fetch should NOT re-fetch')
+    t.ok(p instanceof Promise, 'it should return a promise')
+    return p
+  }).then(obm => {
+    t.pass('promise for fetch that didnt cause re-fetch should still fulfill')
     t.ok(obm.obmData.fetched,
       'when getting server response should mark its data as fetched')
-    t.equal(obm.obmData.fetchRequest, null,
-      'it should clear the current request')
-    t.notOk(obm.isIncluded() && obm.getActionExists('manager-included'),
-      'it shouldnt update its data if incoming data isnt for the same exp')
+    t.notOk(obm.isIncluded() || obm.getActionExists('manager-included'),
+      'it should NOT update its data if incoming data is NOT for the exp')
+    res.nr = 44 // try now with response that matches exp number
+    return obm.fetch()
+  }).then(obm => {
+    t.ok(obm.isIncluded() && obm.getActionExists('manager-included'),
+      'it should update its data if incoming data is for the exp')
   })
-
 })
