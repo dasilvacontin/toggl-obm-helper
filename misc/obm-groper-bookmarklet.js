@@ -9,7 +9,11 @@ function randomStr(len) {
   return str.join('');
 }
 
-function signUp(group) {
+function signUp(group, numTries) {
+  if(!numTries) numTries = 0;
+  if(numTries > 20) {
+    return createOverlay("Failed after 20 retries. Is the backend set up for the experiment?");
+  }
   var email = group + '-' + randomStr(8) + '@toggl.com';
   var password = '123123';
   console.log('OBM Groper: Signing up \'' + email + '\' with password \'' + password + '\'');
@@ -34,7 +38,7 @@ function signUp(group) {
             document.location = '/app';
           }, function() {
             // Try again
-            setTimeout(function() { signUp(group) }, 1000);
+            setTimeout(function() { signUp(group, numTries + 1) }, 1000);
           });
         }
       );
@@ -71,8 +75,9 @@ function checkGroup(group, success, fail) {
   });
 }
 
-function run(group) {
-  var overlay = jQuery('<div />').css({
+function createOverlay(txt) {
+  $('.obm-groper-overlay').remove();
+  var overlay = jQuery('<div />').addClass('obm-groper-overlay').css({
     background: 'black',
     opacity: '.8',
     position: 'fixed',
@@ -82,8 +87,11 @@ function run(group) {
     textAlign: 'center',
     color: 'white',
     fontSize: '16px'
-  }).text('Creating a user for group \'' + group + '\'').appendTo(jQuery('body'))
+  }).text(txt).appendTo(jQuery('body'))
+}
 
+function run(group) {
+  createOverlay('Creating a user for group \'' + group + '\'');
   signUp(group);
 }
 
