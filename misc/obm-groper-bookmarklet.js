@@ -76,18 +76,23 @@ function checkGroup(group, success, fail) {
 }
 
 function createOverlay(txt) {
-  $('.obm-groper-overlay').remove();
+  jQuery('.obm-groper-overlay').remove();
+  var gif = jQuery('<img src="http://thecatapi.com/api/images/get?format=src&type=gif">').css({
+    display: 'block',
+    maxWidth: '500px',
+    margin: '50px auto'
+  });
   var overlay = jQuery('<div />').addClass('obm-groper-overlay').css({
-    background: 'black',
-    opacity: '.8',
+    background: 'rgba(0,0,0,160)',
     position: 'fixed',
     zIndex: 999999,
     padding: '40px',
     top: 0, left: 0, right: 0, bottom: 0,
     textAlign: 'center',
+    font: '16px sans-serif',
     color: 'white',
     fontSize: '16px'
-  }).text(txt).appendTo(jQuery('body'))
+  }).text(txt).append(gif).appendTo(jQuery('body'))
 }
 
 function run(group) {
