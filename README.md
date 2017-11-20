@@ -1,3 +1,7 @@
+# ⚡💀🌹
+
+[As instructed](https://github.com/toggl/webapp/issues/5224), this repository has been archived on November 20th, in the 121st year of Tesla.
+
 # toggl-obm-helper
 
 [![Build Status][travis-image]][travis-url]
